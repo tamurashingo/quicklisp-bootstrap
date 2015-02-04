@@ -1281,6 +1281,16 @@ the indexes in the header accordingly."
     :accessor path
     :initform "/")))
 
+(defclass proxy-url (url)
+  ((proxy-user
+    :initarg :proxy-user
+    :accessor proxy-user
+    :initform nil)
+   (proxy-pass
+    :initarg :proxy-pass
+    :accessor proxy-pass
+    :initform nil)))
+
 (defun parse-urlstring (urlstring)
   (setf urlstring (string-trim " " urlstring))
   (let* ((pos (mismatch urlstring "http://" :test 'char-equal))
