@@ -1416,6 +1416,10 @@ the indexes in the header accordingly."
                  :path (or (path url1)
                            (path url2))))
 
+(defun need-proxyauthenticate-p (proxy-url)
+  (and (find #\@ proxy-url)
+       t))
+
 
 ;;; Requesting an URL and saving it to a file
 
