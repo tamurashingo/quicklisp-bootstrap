@@ -1396,6 +1396,11 @@ the indexes in the header accordingly."
           (and (/= 80 (port url)) (port url))
           (path url)))
 
+(defun proxyurlstring (proxy-url)
+  (format nil "~@[http://~A~]~@[:~D~]"
+          (hostname proxy-url)
+          (and (/= 80 (port proxy-url)) (port proxy-url))))
+
 (defmethod print-object ((url url) stream)
   (print-unreadable-object (url stream :type t)
     (prin1 (urlstring url) stream)))
