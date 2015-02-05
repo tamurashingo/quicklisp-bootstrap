@@ -1291,11 +1291,11 @@ the indexes in the header accordingly."
     :accessor proxy-pass
     :initform nil)))
 
-(defun parse-urlstring (urlstring)
+(defun parse-urlstring (urlstring &key (proxy-auth nil))
   (setf urlstring (string-trim " " urlstring))
   (let* ((pos (mismatch urlstring "http://" :test 'char-equal))
          (mark pos)
-         (url (make-instance 'url)))
+         (url (make-instance 'proxy-url)))
     (labels ((save ()
                (subseq urlstring mark pos))
              (mark ()
@@ -1309,10 +1309,35 @@ the indexes in the header accordingly."
                (case char
                  (#\/
                   (setf (port url) nil)
+                  (incf pos)
                   (mark)
                   #'in-path)
                  (t
-                  #'in-host)))
+                  (if proxy-auth
+                      #'in-proxy-user
+                      #'in-host))))
+             (in-proxy-user (char)
+               (case char
+                 (:end
+                  (error "~S is not a valid PROXY URL" urlstring))
+                 (#\:
+                  (setf (proxy-user url) (save))
+                  (incf pos)
+                  (mark)
+                  #'in-proxy-pass)
+                 (t
+                  #'in-proxy-user)))
+             (in-proxy-pass (char)
+               (case char
+                 (:end
+                  (error "~S is not a valid PROXY URL" urlstring))
+                 (#\@
+                  (setf (proxy-pass url) (save))
+                  (incf pos)
+                  (mark)
+                  #'in-host)
+                 (t
+                  #'in-proxy-pass)))
              (in-host (char)
                (case char
                  ((#\/ :end)
