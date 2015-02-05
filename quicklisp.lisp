@@ -67,8 +67,6 @@
   (:use #:cl #:qlqs-network #:qlqs-progress)
   (:export #:fetch
            #:*proxy-url*
-           #:*proxy-user*
-           #:*proxy-pass*
            #:*maximum-redirects*
            #:*default-url-defaults*))
 
@@ -81,8 +79,6 @@
   (:export #:install
            #:help
            #:*proxy-url*
-           #:*proxy-user*
-           #:*proxy-pass*
            #:*asdf-url*
            #:*quicklisp-tar-url*
            #:*setup-url*
@@ -984,8 +980,14 @@
   (subseq (storage sink) 0))
 
 (defvar *proxy-url* nil)
-(defvar *proxy-user* nil)
-(defvar *proxy-pass* nil)
+(defver *proxy* nil
+  "instance of proxy-url")
+(defvar *proxy-server* nil
+  "proxy server address and port")
+(defvar *proxy-user* nil
+  "set proxy username if authorization is required to use the proxy")
+(defvar *proxy-pass* nil
+  "set proxy password if authorization is required to use the proxy")
 
 (defun full-proxy-path (host port path)
   (format nil "~:[http~;https~]://~A~:[:~D~;~*~]~A"
@@ -1482,7 +1484,7 @@ the indexes in the header accordingly."
   (setf file (merge-pathnames file))
   (let ((redirect-count 0)
         (original-url url)
-        (connect-url (or (url *proxy-url*) url))
+        (connect-url (or (url *proxy-server*) url))
         (stream (if quietly
                     (make-broadcast-stream)
                     *trace-output*)))
@@ -1792,13 +1794,16 @@ the indexes in the header accordingly."
 
 (defun install (&key ((:path *home*) *home*)
                   ((:proxy *proxy-url*) *proxy-url*)
-                  ((:user *proxy-user*) *proxy-user*)
-                  ((:pass *proxy-pass*) *proxy-pass*)
                   client-url
                   client-version
                   dist-url
                   dist-version)
   (setf *home* (merge-pathnames *home* (truename *default-pathname-defaults*)))
+  (when *proxy-url*
+    (setf *proxy* (parse-urlstring *proxy-url* :proxy-auth (need-proxyauthenticate-p *proxy-url*)))
+    (setf *proxy-server* (proxyurlstring *proxy*))
+    (setf *proxy-user* (proxy-user *proxy*))
+    (setf *proxy-pass* (proxy-pass *proxy*)))
   (let ((name (non-empty-file-namestring *home*)))
     (when name
       (warn "Making ~A part of the install pathname directory"
